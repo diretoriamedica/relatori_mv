@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conciliação Financeira — Grupo CASA × MV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --azul:        #1B2B5B;
+    --azul-claro:  #2A3F7A;
+    --azul-escuro: #111D40;
+    --laranja:     #F47920;
+    --laranja-cl:  #F79A50;
+    --laranja-esc: #D46610;
+    --verde:       #16a34a;
+    --vermelho:    #dc2626;
+    --amarelo:     #d97706;
+    --cinza:       #64748b;
+    --fundo:       #f0f4f8;
+    --branco:      #ffffff;
+    --borda:       #dde3ee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Praktika Rounded','Roboto','Segoe UI',system-ui,sans-serif;
+         background: var(--fundo); color: #1e293b; font-size: 14px; }
+
+  /* Header */
+  .header {
+    background: var(--azul);
+    color: white; padding: 0 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 4px 16px rgba(17,29,64,0.35);
+    min-height: 72px;
+  }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  .header-logo { background: #fff; border-radius: 6px; padding: 6px 12px;
+                  display: flex; align-items: center; }
+  .header-logo img { height: 36px; }
+  .header-divider { width: 1px; height: 36px; background: rgba(255,255,255,0.25); }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header p { font-size: 11px; opacity: 0.75; margin-top: 3px; }
+  .badge { background: var(--laranja); color: white; padding: 6px 14px;
+           border-radius: 20px; font-size: 12px; font-weight: 700; }
+
+  /* Tabs */
+  .tabs { background: white; border-bottom: 2px solid var(--borda); padding: 0 32px; display: flex; gap: 4px; }
+  .tab { padding: 14px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600;
+         font-size: 13px; color: var(--cinza); transition: all 0.2s; white-space: nowrap; }
+  .tab:hover { color: var(--azul); }
+  .tab.active { color: var(--azul); border-bottom-color: var(--laranja); }
+
+  /* Content */
+  .content { display: none; padding: 28px 32px; max-width: 1600px; margin: 0 auto; }
+  .content.active { display: block; }
+
+  /* KPI Cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .kpi-card {
+    background: white; border-radius: 12px; padding: 20px;
+    border-left: 4px solid var(--azul);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .kpi-card.vermelho { border-left-color: var(--vermelho); }
+  .kpi-card.verde { border-left-color: var(--verde); }
+  .kpi-card.amarelo { border-left-color: var(--amarelo); }
+  .kpi-card.laranja { border-left-color: var(--laranja); }
+  .kpi-card.laranja .value { color: var(--laranja); }
+  .kpi-card.roxo { border-left-color: #7c3aed; }
+  .kpi-card .label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--cinza); letter-spacing: 0.5px; }
+  .kpi-card .value { font-size: 22px; font-weight: 800; margin: 6px 0 2px; color: #0f172a; }
+  .kpi-card .sub { font-size: 12px; color: var(--cinza); }
+  .kpi-card.vermelho .value { color: var(--vermelho); }
+  .kpi-card.verde .value { color: var(--verde); }
+  .kpi-card.amarelo .value { color: var(--amarelo); }
+  .kpi-card.laranja .value { color: var(--laranja); }
+
+  /* Alert boxes */
+  .alert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .alert-box { background: white; border-radius: 10px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .alert-box.danger { border: 2px solid #fecaca; background: #fff5f5; }
+  .alert-box.warning { border: 2px solid rgba(244,121,32,0.35); background: rgba(244,121,32,0.05); }
+  .alert-box.info { border: 2px solid rgba(27,43,91,0.25); background: rgba(27,43,91,0.04); }
+  .alert-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .alert-box.danger .alert-title { color: var(--vermelho); }
+  .alert-box.warning .alert-title { color: var(--laranja); }
+  .alert-box.info .alert-title { color: var(--azul); }
+  .alert-value { font-size: 28px; font-weight: 800; }
+  .alert-box.danger .alert-value { color: var(--vermelho); }
+  .alert-box.warning .alert-value { color: var(--laranja); }
+  .alert-box.info .alert-value { color: var(--azul); }
+  .alert-desc { font-size: 12px; color: var(--cinza); margin-top: 4px; }
+
+  /* Charts */
+  .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; margin-bottom: 28px; }
+  .chart-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .chart-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--azul); }
+  .chart-wrap { position: relative; height: 260px; }
+
+  /* Tables */
+  .table-section { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+  .table-section h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; color: var(--azul); }
+  .table-desc { font-size: 12px; color: var(--cinza); margin-bottom: 14px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .data-table th { background: rgba(27,43,91,0.06); padding: 10px 12px; text-align: left; font-weight: 700;
+                   color: var(--azul-escuro); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px;
+                   border-bottom: 2px solid rgba(27,43,91,0.2); }
+  .data-table td { padding: 9px 12px; border-bottom: 1px solid var(--borda); }
+  .data-table tr:hover td { background: rgba(27,43,91,0.03); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .badge-red { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-orange { background: rgba(244,121,32,0.12); color: var(--laranja-esc); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-blue { background: rgba(27,43,91,0.1); color: var(--azul); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-gray { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .valor-neg { color: var(--vermelho); font-weight: 600; }
+  .valor-pos { color: var(--verde); font-weight: 600; }
+  .scroll-table { overflow-x: auto; max-height: 420px; overflow-y: auto; }
+
+  /* Summary conclusion */
+  .conclusion-box { background: linear-gradient(135deg, var(--azul-escuro), var(--azul)); color: white;
+                    border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .conclusion-box h3 { font-size: 16px; margin-bottom: 16px; font-weight: 700; }
+  .conclusion-row { display: flex; justify-content: space-between; align-items: center;
+                    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  .conclusion-row:last-child { border-bottom: none; font-size: 16px; font-weight: 800; }
+  .conclusion-label { opacity: 0.85; }
+  .conclusion-value { font-weight: 700; font-size: 15px; }
+  .conclusion-value.neg { color: #fca5a5; }
+  .conclusion-value.pos { color: #86efac; }
+
+  /* Bank section */
+  .bank-mention { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+  .bank-mention .desc { font-weight: 600; color: #15803d; }
+  .bank-mention .meta { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+  /* Two column layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+
+  /* Footer */
+  .footer {
+    background: var(--azul-escuro); color: rgba(255,255,255,0.65);
+    padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; margin-top: 40px;
+  }
+  .footer strong { color: rgba(255,255,255,0.9); }
+  .footer-logo img { height: 24px; opacity: 0.8; }
+
+  /* Print */
+  @media print { .tabs { display: none; } .content { display: block !important; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">
+      <img src="https://static.wixstatic.com/media/70be2f_85f411ed98c74a479aab8c66ec913b71~mv2.png/v1/fit/w_2500,h_1330,al_c/70be2f_85f411ed98c74a479aab8c66ec913b71~mv2.png"
+           alt="Rede Casa Hospitais">
+    </div>
+    <div class="header-divider"></div>
+    <div>
+      <h1>Conciliação Financeira — Grupo CASA × MV</h1>
+      <p>Análise completa &middot; Encontro de contas &middot; Duplicidades &middot; Extrajudicial &middot; Extratos bancários</p>
+    </div>
+  </div>
+  <div style="text-align:right">
+    <div class="badge">Base: 23/02/2026</div>
+    <div style="font-size:11px; opacity:0.7; margin-top:6px">Análise gerada em 27/03/2026</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('resumo')">📊 Resumo Executivo</div>
+  <div class="tab" onclick="showTab('pendencias')">⚠️ Pendências MV</div>
+  <div class="tab" onclick="showTab('encontro')">🔗 Encontro de Contas</div>
+  <div class="tab" onclick="showTab('duplicidades')">🔴 Duplicidades</div>
+  <div class="tab" onclick="showTab('extrajudicial')">⚖️ Cobrança Extrajudicial</div>
+  <div class="tab" onclick="showTab('extratos')">🏦 Extratos Bancários</div>
+</div>
+
+<!-- ============================================================ RESUMO ============================================================ -->
+<div id="tab-resumo" class="content active">
+
+  <div class="kpi-grid">
+    <div class="kpi-card vermelho">
+      <div class="label">MV Alega em Aberto (COMPILADO)</div>
+      <div class="value">R$ 4,77 M</div>
+      <div class="sub">789 NFs · 7 fornecedores · Base oficial MV</div>
+    </div>
+    <div class="kpi-card verde">
+      <div class="label">Total Pago pelo CASA</div>
+      <div class="value">R$ 20,1 M</div>
+      <div class="sub">1.465 registros confirmados</div>
+    </div>
+    <div class="kpi-card laranja">
+      <div class="label">Cobrança Extrajudicial</div>
+      <div class="value">R$ 5,25 M</div>
+      <div class="sub">Face: R$ 4,62 M · Juros: R$ 0,63 M</div>
+    </div>
+    <div class="kpi-card roxo">
+      <div class="label">Extratos Bancários</div>
+      <div class="value">349 PDFs</div>
+      <div class="sub">396 ocorrências MV detectadas</div>
+    </div>
+  </div>
+
+  <div class="alert-grid">
+    <div class="alert-box danger">
+      <div class="alert-title">🔴 NFs Pagas Ainda Cobradas</div>
+      <div class="alert-value">R$ 703.215,93</div>
+      <div class="alert-desc">34 notas fiscais que o CASA já pagou mas a MV ainda lista como em aberto</div>
+    </div>
+    <div class="alert-box warning">
+      <div class="alert-title">⚠️ Pagamentos Duplicados</div>
+      <div class="alert-value">20 NFs</div>
+      <div class="alert-desc">Notas com o mesmo número aparecendo mais de uma vez nos registros de pagamento</div>
+    </div>
+    <div class="alert-box danger">
+      <div class="alert-title">⚖️ Ext. já Pagas pelo CASA</div>
+      <div class="alert-value">R$ 197.229,13</div>
+      <div class="alert-desc">48 NFs da cobrança extrajudicial que constam como pagas nos registros internos do CASA</div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-title">ℹ️ Duplicatas nas Pendências MV</div>
+      <div class="alert-value">20 NFs</div>
+      <div class="alert-desc">Notas com o mesmo número listadas mais de uma vez no levantamento de pendências da MV</div>
+    </div>
+  </div>
+
+  <div class="conclusion-box">
+    <h3>📋 Posição Financeira Consolidada — Conciliação</h3>
+    <div class="conclusion-row">
+      <span class="conclusion-label">(-) Total alegado pela MV - COMPILADO oficial</span>
+      <span class="conclusion-value neg">- R$ 4.768.328,87</span>
+    </div>
+    <div class="conclusion-row">
+      <span class="conclusion-label">(+) Total comprovadamente pago pelo CASA</span>
+      <span class="conclusion-value pos">+ R$ 20.120.190,83</span>
+    </div>
+    <div class="conclusion-row">
+      <span class="conclusion-label">(-) Cobrança extrajudicial (face) da MV</span>
+      <span class="conclusion-value neg">- R$ 4.621.125,95</span>
+    </div>
+    <div class="conclusion-row">
+      <span class="conclusion-label">(=) Saldo: total pago CASA vs. Extrajudicial face</span>
+      <span class="conclusion-value pos">+ R$ 15.499.064,88</span>
+    </div>
+    <div class="conclusion-row">
+      <span class="conclusion-label">⚡ NFs pagas mas ainda cobradas (contestar)</span>
+      <span class="conclusion-value neg">R$ 703.215,93</span>
+    </div>
+    <div class="conclusion-row">
+      <span class="conclusion-label">⚡ NFs ext. já pagas (contestar imediatamente)</span>
+      <span class="conclusion-value neg">R$ 197.229,13</span>
+    </div>
+    <div class="conclusion-row">
+      <span class="conclusion-label" style="font-weight:700">Total a Contestar/Excluir da cobrança</span>
+      <span class="conclusion-value" style="color:#fde68a; font-size:18px">R$ 900.445,06</span>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Pendências por Fornecedor (MV alega em aberto)</div>
+      <div class="chart-wrap"><canvas id="chartPendencias"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Pagamentos Realizados pelo CASA por Fornecedor</div>
+      <div class="chart-wrap"><canvas id="chartPagamentos"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Cobrança Extrajudicial — Face vs. Com Juros</div>
+      <div class="chart-wrap"><canvas id="chartExtrajudicial"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Pendências por Unidade Hospitalar</div>
+      <div class="chart-wrap"><canvas id="chartUnidades"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================ PENDÊNCIAS ============================================================ -->
+<div id="tab-pendencias" class="content">
+  <div class="kpi-grid">
+    <div class="kpi-card vermelho">
+      <div class="label">Total Pendente (MV)</div>
+      <div class="value">R$ 9.536.657</div>
+      <div class="sub">789 notas / parcelas em aberto</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Acordos 2023 em Aberto</div>
+      <div class="value">R$ 957.914</div>
+      <div class="sub">23 parcelas · ACORDO MV 2023</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Acordos 2024 em Aberto</div>
+      <div class="value">R$ 459.965</div>
+      <div class="sub">182 parcelas · ACORDO MV 2024</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">NFs MV Informática</div>
+      <div class="value">R$ 2.209.394</div>
+      <div class="sub">346 notas · MV INF Nordeste</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="table-section">
+      <h3>Pendências por Fornecedor</h3>
+      <div class="table-desc">Valor total que a MV alega estar em aberto, por fornecedor</div>
+      <table class="data-table">
+        <thead><tr><th>Fornecedor</th><th style="text-align:right">Valor em Aberto</th><th style="text-align:right">% Total</th></tr></thead>
+        <tbody>
+          <tr><td>MV INFORMÁTICA NORDESTE LTDA</td><td class="valor-neg" style="text-align:right">R$ 2.209.394,14</td><td style="text-align:right">23,2%</td></tr>
+          <tr><td>ACORDO MV INFORMÁTICA 2023</td><td class="valor-neg" style="text-align:right">R$ 957.914,45</td><td style="text-align:right">10,0%</td></tr>
+          <tr><td>MV SISTEMAS DE MED. DIAG.</td><td class="valor-neg" style="text-align:right">R$ 469.351,80</td><td style="text-align:right">4,9%</td></tr>
+          <tr><td>ACORDO MV INFORMÁTICA 2024</td><td class="valor-neg" style="text-align:right">R$ 459.965,46</td><td style="text-align:right">4,8%</td></tr>
+          <tr><td>FLOWTI TECNOLOGIA LTDA</td><td class="valor-neg" style="text-align:right">R$ 452.714,20</td><td style="text-align:right">4,7%</td></tr>
+          <tr><td>GIF GESTÃO INTELIGÊNCIA FAT.</td><td class="valor-neg" style="text-align:right">R$ 185.755,74</td><td style="text-align:right">1,9%</td></tr>
+          <tr><td>SERVIÇOS TÉCNICOS LTDA</td><td class="valor-neg" style="text-align:right">R$ 33.233,08</td><td style="text-align:right">0,3%</td></tr>
+          <tr style="background:#fef2f2"><td><strong>TOTAL (valores declarados)</strong></td><td class="valor-neg" style="text-align:right"><strong>R$ 4.768.328,87</strong></td><td style="text-align:right"><strong>100%</strong></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;padding:10px;background:#fffbeb;border-radius:8px;font-size:12px;color:#92400e;">
+        ✅ R$ 4.768.328,87 = total validado pelo próprio COMPILADO REDE do arquivo de levantamento da MV.
+        Este é o valor oficial e autoritativo que a MV declara como em aberto.
+        ⚠️ O valor de R$ 9,5M é a soma bruta das abas individuais com possíveis sobreposições entre acordos e NFs avulsas.
+      </div>
+    </div>
+    <div class="table-section">
+      <h3>Pendências por Unidade Hospitalar</h3>
+      <div class="table-desc">Distribuição das pendências por unidade do Grupo CASA</div>
+      <table class="data-table">
+        <thead><tr><th>Unidade</th><th style="text-align:right">Valor Pendente</th></tr></thead>
+        <tbody>
+          <tr><td>São Bernardo</td><td style="text-align:right; color:#dc2626; font-weight:600">R$ 1.769.090,17</td></tr>
+          <tr><td>H. Cancer</td><td style="text-align:right; color:#dc2626; font-weight:600">R$ 559.616,50</td></tr>
+          <tr><td>Laranjeiras</td><td style="text-align:right">R$ 447.244,47</td></tr>
+          <tr><td>Evangélico</td><td style="text-align:right">R$ 380.425,22</td></tr>
+          <tr><td>Casa de Portugal</td><td style="text-align:right">R$ 318.347,47</td></tr>
+          <tr><td>Italiano</td><td style="text-align:right">R$ 285.104,52</td></tr>
+          <tr><td>Botafogo</td><td style="text-align:right">R$ 225.763,48</td></tr>
+          <tr><td>Santa Cruz</td><td style="text-align:right">R$ 211.100,08</td></tr>
+          <tr><td>Egas Moniz</td><td style="text-align:right">R$ 128.258,09</td></tr>
+          <tr><td>Ilha</td><td style="text-align:right">R$ 122.852,64</td></tr>
+          <tr><td>Procordis</td><td style="text-align:right">R$ 107.550,97</td></tr>
+          <tr><td>Arrendatária</td><td style="text-align:right">R$ 88.949,28</td></tr>
+          <tr><td>Prontocor</td><td style="text-align:right">R$ 84.531,13</td></tr>
+          <tr><td>3D Diag.</td><td style="text-align:right">R$ 39.494,85</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ ENCONTRO DE CONTAS ============================================================ -->
+<div id="tab-encontro" class="content">
+  <div class="alert-grid">
+    <div class="alert-box danger">
+      <div class="alert-title">🔴 NFs Pagas mas Ainda Cobradas</div>
+      <div class="alert-value">34 Notas</div>
+      <div class="alert-desc">Valor total: R$ 703.215,93 — Estas notas devem ser contestadas imediatamente</div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-title">📌 Total NFs em Aberto (MV)</div>
+      <div class="alert-value">627 NFs</div>
+      <div class="alert-desc">Número de notas distintas na base de pendências da MV</div>
+    </div>
+    <div class="alert-box info">
+      <div class="alert-title">✅ Total NFs Pagas (CASA)</div>
+      <div class="alert-value">1.317 NFs</div>
+      <div class="alert-desc">Número de notas distintas nos registros de pagamento do Grupo CASA</div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <h3>🔴 NFs Pagas pelo CASA mas Ainda Cobradas pela MV</h3>
+    <div class="table-desc">
+      Estas notas aparecem TANTO nos registros de pagamento do CASA QUANTO na lista de pendências da MV.
+      São candidatas imediatas para contestação — o CASA deve apresentar comprovantes de pagamento.
+    </div>
+    <div class="scroll-table">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nº NF / Parcela</th>
+            <th>Fornecedor</th>
+            <th>Unidade</th>
+            <th style="text-align:right">Valor Cobrado</th>
+            <th>Vencimento</th>
+            <th>Origem</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>7 x 24</td><td>ACORDO MV INFORMÁTICA 2023</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 50.416,55</td><td>15/04/2024</td><td><span class="badge-orange">ACORDO MV 2023</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr><td>11 x 24</td><td>ACORDO MV INFORMÁTICA 2023</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 50.416,55</td><td>15/08/2024</td><td><span class="badge-orange">ACORDO MV 2023</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr><td>12 x 24</td><td>ACORDO MV INFORMÁTICA 2023</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 50.416,55</td><td>16/09/2024</td><td><span class="badge-orange">ACORDO MV 2023</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr><td>20 x 24</td><td>ACORDO MV INFORMÁTICA 2023</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 50.416,55</td><td>—</td><td><span class="badge-orange">ACORDO MV 2023</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr><td>23 x 24</td><td>ACORDO MV INFORMÁTICA 2023</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 50.416,55</td><td>—</td><td><span class="badge-orange">ACORDO MV 2023</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr><td colspan="3" style="font-weight:600; background:#fef2f2">SUBTOTAL ACORDO MV 2023</td><td style="text-align:right; font-weight:600; background:#fef2f2" class="valor-neg">R$ 252.082,75</td><td colspan="3" style="background:#fef2f2"></td></tr>
+          <tr><td>6 de 19 (mult.)</td><td>ACORDO MV INFORMÁTICA 2024</td><td>Arrendatária / S. Bernardo</td><td style="text-align:right">—</td><td>—</td><td><span class="badge-blue">ACORDO MV 2024</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr><td>PARC 6 X 19</td><td>ACORDO MV INFORMÁTICA 2024</td><td>S. Bernardo</td><td style="text-align:right">—</td><td>—</td><td><span class="badge-blue">ACORDO MV 2024</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr><td>NFs diversas (29)</td><td>MV Informática / Sistemas / Flowti</td><td>Diversas</td><td style="text-align:right" class="valor-neg">R$ 451.133,18</td><td>2023–2024</td><td><span class="badge-gray">Notas avulsas</span></td><td><span class="badge-red">Em Aberto</span></td></tr>
+          <tr style="background:#fef2f2; font-weight:700"><td colspan="3">TOTAL GERAL</td><td style="text-align:right" class="valor-neg">R$ 703.215,93</td><td colspan="3"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:14px; padding:12px; background:#fef9c3; border-radius:8px; font-size:12px; color:#713f12;">
+      💡 <strong>Ação recomendada:</strong> Reunir comprovantes de pagamento (boletos quitados, TEDs, PIX) para as 34 NFs identificadas
+      e apresentar formalmente à MV para exclusão da base de cobrança. Valor contestável: <strong>R$ 703.215,93</strong>.
+    </div>
+  </div>
+
+  <div class="table-section">
+    <h3>📊 Resumo Comparativo: Pago vs. Pendente por Fornecedor</h3>
+    <div class="table-desc">Comparação entre o que a MV alega e o que o CASA já pagou, por fornecedor</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Fornecedor / Grupo</th>
+          <th style="text-align:right">Pago pelo CASA</th>
+          <th style="text-align:right">MV Alega em Aberto</th>
+          <th style="text-align:right">Diferença</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>MV Informática Nordeste</td>
+          <td style="text-align:right" class="valor-pos">R$ 5.906.882,28</td>
+          <td style="text-align:right" class="valor-neg">R$ 2.209.394,14</td>
+          <td style="text-align:right; color:var(--azul); font-weight:600">R$ 3.697.488,14</td>
+        </tr>
+        <tr>
+          <td>MV Sistemas</td>
+          <td style="text-align:right" class="valor-pos">R$ 1.836.570,75</td>
+          <td style="text-align:right" class="valor-neg">R$ 469.351,80</td>
+          <td style="text-align:right; color:var(--azul); font-weight:600">R$ 1.367.218,95</td>
+        </tr>
+        <tr>
+          <td>Acordos MV (2023+2024)</td>
+          <td style="text-align:right" class="valor-pos">R$ 1.995.626,42</td>
+          <td style="text-align:right" class="valor-neg">R$ 1.417.879,91</td>
+          <td style="text-align:right; color:var(--azul); font-weight:600">R$ 577.746,51</td>
+        </tr>
+        <tr>
+          <td>Flowti Tecnologia</td>
+          <td style="text-align:right" class="valor-pos">R$ 437.263,08</td>
+          <td style="text-align:right" class="valor-neg">R$ 452.714,20</td>
+          <td style="text-align:right; color:#dc2626; font-weight:600">- R$ 15.451,12</td>
+        </tr>
+        <tr>
+          <td>GIF Gestão</td>
+          <td style="text-align:right" class="valor-pos">R$ 263.090,97</td>
+          <td style="text-align:right" class="valor-neg">R$ 185.755,74</td>
+          <td style="text-align:right; color:var(--azul); font-weight:600">R$ 77.335,23</td>
+        </tr>
+        <tr>
+          <td>Serviços Técnicos</td>
+          <td style="text-align:right" class="valor-pos">R$ 77.655,70</td>
+          <td style="text-align:right" class="valor-neg">R$ 33.233,08</td>
+          <td style="text-align:right; color:var(--azul); font-weight:600">R$ 44.422,62</td>
+        </tr>
+        <tr style="background:#f8fafc; font-weight:700">
+          <td>TOTAL</td>
+          <td style="text-align:right" class="valor-pos">R$ 20.120.190,83</td>
+          <td style="text-align:right" class="valor-neg">R$ 9.536.657,73</td>
+          <td style="text-align:right; color:var(--azul); font-weight:700">R$ 10.583.533,10</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================ DUPLICIDADES ============================================================ -->
+<div id="tab-duplicidades" class="content">
+  <div class="kpi-grid">
+    <div class="kpi-card vermelho">
+      <div class="label">NFs Dup. nas Pendências MV</div>
+      <div class="value">20 NFs</div>
+      <div class="sub">Mesmo número listado 2+ vezes</div>
+    </div>
+    <div class="kpi-card amarelo">
+      <div class="label">NFs Dup. nos Pagamentos</div>
+      <div class="value">20 NFs</div>
+      <div class="sub">Verificar se houve pagamento duplo</div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <h3>🔴 Possíveis Pagamentos Duplicados — Análise Crítica</h3>
+    <div class="table-desc">
+      Notas fiscais que aparecem mais de uma vez nos registros de pagamento.
+      Alguns podem ser legítimos (mesma NF paga por unidades diferentes), mas todos devem ser verificados.
+    </div>
+    <div class="scroll-table">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>NF</th>
+            <th>Fornecedor</th>
+            <th>Unidade</th>
+            <th style="text-align:right">Valor Pago</th>
+            <th>Data Pgto</th>
+            <th>Status</th>
+            <th>Origem</th>
+            <th>Alerta</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>224</td><td>ACORDO MV INFORMÁTICA 2023</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 50.416,55</td><td>05/12/2023</td><td><span class="badge-green">PAGO</span></td><td>ACORDO MV PAGOS</td><td rowspan="2" style="background:#fff5f5"><span class="badge-red">⚠️ DUPLICATA</span></td></tr>
+          <tr><td>224</td><td>MV SISTEMAS</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 10.481,28</td><td>—</td><td><span class="badge-orange">ACORDO</span></td><td>NF ACORDO - ANALISE</td></tr>
+          <tr><td colspan="8" style="background:#f8fafc; height:6px;"></td></tr>
+          <tr><td>124</td><td>ACORDO MV INFORMÁTICA 2023</td><td>S. Bernardo</td><td style="text-align:right" class="valor-neg">R$ 50.304,81</td><td>21/11/2023</td><td><span class="badge-green">PAGO</span></td><td>ACORDO MV PAGOS</td><td rowspan="2" style="background:#fff5f5"><span class="badge-red">⚠️ VERIFICAR</span></td></tr>
+          <tr><td>124</td><td>ACORDO MV INFORMÁTICA 2023</td><td>—</td><td style="text-align:right" class="valor-neg">R$ 50.416,55</td><td>—</td><td>—</td><td>ACORDOS SEM STATUS</td></tr>
+          <tr><td colspan="8" style="background:#f8fafc; height:6px;"></td></tr>
+          <tr><td>46896</td><td>MV INFORMATICA NORDESTE</td><td>—</td><td style="text-align:right" class="valor-neg">R$ 20.468,71</td><td>—</td><td><span class="badge-green">PAGO</span></td><td>MV INF PAGOS</td><td rowspan="2" style="background:#fff5f5"><span class="badge-red">⚠️ DUPLICATA</span></td></tr>
+          <tr><td>46896</td><td>MV INFORMATICA NORDESTE</td><td>—</td><td style="text-align:right" class="valor-neg">R$ 20.468,70</td><td>—</td><td><span class="badge-green">PAGO</span></td><td>MV INF PAGOS</td></tr>
+          <tr><td colspan="8" style="background:#f8fafc; height:6px;"></td></tr>
+          <tr><td>2531</td><td>MV INFORMATICA NORDESTE</td><td>—</td><td style="text-align:right" class="valor-neg">R$ 17.941,81</td><td>—</td><td><span class="badge-green">PAGO</span></td><td>MV INF PAGOS</td><td rowspan="2" style="background:#fff5f5"><span class="badge-red">⚠️ VERIFICAR</span></td></tr>
+          <tr><td>2531</td><td>MV INFORMATICA NORDESTE</td><td>—</td><td style="text-align:right" class="valor-neg">R$ 17.941,80</td><td>—</td><td><span class="badge-green">PAGO</span></td><td>MV INF PAGOS</td></tr>
+          <tr><td colspan="8" style="background:#f8fafc; height:6px;"></td></tr>
+          <tr><td>20578</td><td>MV INFORMATICA NORDESTE</td><td>—</td><td style="text-align:right" class="valor-neg">R$ 15.217,50</td><td>—</td><td><span class="badge-green">PAGO</span></td><td>MV INF PAGOS</td><td rowspan="2" style="background:#fff5f5"><span class="badge-red">⚠️ VERIFICAR</span></td></tr>
+          <tr><td>20578</td><td>MV INFORMATICA NORDESTE</td><td>—</td><td style="text-align:right" class="valor-neg">R$ 15.217,50</td><td>—</td><td><span class="badge-green">PAGO</span></td><td>MV INF PAGOS</td></tr>
+          <tr><td colspan="8" style="background:#f8fafc; height:6px;"></td></tr>
+          <tr><td>Parcelas 119–519</td><td>MV INFORMATICA (acordos)</td><td>Múltiplas</td><td style="text-align:right" class="valor-neg">Variado</td><td>2023–2024</td><td>—</td><td>—</td><td><span class="badge-orange">⚠️ AVALIAR</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:14px; padding:12px; background:#fef9c3; border-radius:8px; font-size:12px; color:#713f12;">
+      💡 <strong>Ação recomendada:</strong> Para as NFs com valores idênticos ou muito próximos (diferença de R$ 0,01),
+      verificar nos extratos bancários se houve débito duplo. Para NFs de acordos em múltiplas unidades,
+      confirmar se cada unidade tem sua própria obrigação ou se é a mesma parcela.
+    </div>
+  </div>
+
+  <div class="table-section">
+    <h3>⚠️ Duplicidades nas Pendências da MV (Levantamento)</h3>
+    <div class="table-desc">Notas que a MV listou mais de uma vez no seu levantamento de pendências. Pode inflar o valor cobrado.</div>
+    <table class="data-table">
+      <thead><tr><th>NF (Normalizada)</th><th style="text-align:right">Qtd. Ocorrências</th><th style="text-align:right">Valor Total Duplicado</th><th>Observação</th></tr></thead>
+      <tbody>
+        <tr><td>1624 (Flowti)</td><td style="text-align:right"><span class="badge-red">2x</span></td><td style="text-align:right" class="valor-neg">R$ 54.436,55</td><td>Mesma NF Flowti em 2 unidades</td></tr>
+        <tr><td>4266</td><td style="text-align:right"><span class="badge-red">2x</span></td><td style="text-align:right" class="valor-neg">R$ 16.937,84</td><td>Verificar se é mesma nota</td></tr>
+        <tr><td>3507</td><td style="text-align:right"><span class="badge-red">2x</span></td><td style="text-align:right" class="valor-neg">R$ 16.636,70</td><td>Verificar se é mesma nota</td></tr>
+        <tr><td>4811</td><td style="text-align:right"><span class="badge-red">2x</span></td><td style="text-align:right" class="valor-neg">R$ 14.806,72</td><td>Verificar se é mesma nota</td></tr>
+        <tr><td>Parcelas de acordos (10+)</td><td style="text-align:right"><span class="badge-red">8–11x</span></td><td style="text-align:right">R$ 0,00</td><td>Parcelas sem valor declarado, múltiplas unidades</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================ EXTRAJUDICIAL ============================================================ -->
+<div id="tab-extrajudicial" class="content">
+  <div class="kpi-grid">
+    <div class="kpi-card vermelho">
+      <div class="label">Valor Face Total</div>
+      <div class="value">R$ 4,62 M</div>
+      <div class="sub">951 notas na cobrança ext.</div>
+    </div>
+    <div class="kpi-card laranja">
+      <div class="label">Com Juros e Multa</div>
+      <div class="value">R$ 5,25 M</div>
+      <div class="sub">Juros: R$ 541K · Multa: R$ 92K</div>
+    </div>
+    <div class="kpi-card amarelo">
+      <div class="label">Total Juros + Multa</div>
+      <div class="value">R$ 633.444</div>
+      <div class="sub">Base: 23/02/2026 · 2% multa · 1%/mês</div>
+    </div>
+    <div class="kpi-card verde">
+      <div class="label">Já Pagas (contestar)</div>
+      <div class="value">R$ 197.229</div>
+      <div class="sub">48 NFs pagas mas cobradas ext.</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="table-section">
+      <h3>Cobrança Extrajudicial por Empresa</h3>
+      <div class="table-desc">Detalhamento da cobrança por empresa do grupo MV</div>
+      <table class="data-table">
+        <thead><tr><th>Empresa</th><th style="text-align:right">Face (R$)</th><th style="text-align:right">C/ Juros (R$)</th><th style="text-align:right">Juros/Multa</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>MV INFORMÁTICA NORDESTE</td>
+            <td style="text-align:right" class="valor-neg">R$ 2.772.442,44</td>
+            <td style="text-align:right; font-weight:600">R$ 3.132.087</td>
+            <td style="text-align:right; color:#ea580c">+ R$ 359.644</td>
+          </tr>
+          <tr>
+            <td>MV SISTEMAS MED. DIAG.</td>
+            <td style="text-align:right" class="valor-neg">R$ 751.814,02</td>
+            <td style="text-align:right; font-weight:600">R$ 875.973</td>
+            <td style="text-align:right; color:#ea580c">+ R$ 124.159</td>
+          </tr>
+          <tr>
+            <td>FLOWTI TECNOLOGIA</td>
+            <td style="text-align:right" class="valor-neg">R$ 745.701,96</td>
+            <td style="text-align:right; font-weight:600">R$ 833.116</td>
+            <td style="text-align:right; color:#ea580c">+ R$ 87.414</td>
+          </tr>
+          <tr>
+            <td>GIF GESTÃO INTELIGÊNCIA</td>
+            <td style="text-align:right" class="valor-neg">R$ 325.119,92</td>
+            <td style="text-align:right; font-weight:600">R$ 385.944</td>
+            <td style="text-align:right; color:#ea580c">+ R$ 60.824</td>
+          </tr>
+          <tr>
+            <td>SERVIÇOS TÉCNICOS</td>
+            <td style="text-align:right" class="valor-neg">R$ 25.942,81</td>
+            <td style="text-align:right; font-weight:600">R$ 27.318</td>
+            <td style="text-align:right; color:#ea580c">+ R$ 1.375</td>
+          </tr>
+          <tr>
+            <td>TEIKO (outros)</td>
+            <td style="text-align:right" class="valor-neg">R$ 104,80</td>
+            <td style="text-align:right; font-weight:600">R$ 131</td>
+            <td style="text-align:right; color:#ea580c">+ R$ 26</td>
+          </tr>
+          <tr style="background:#fef2f2; font-weight:700">
+            <td>TOTAL</td>
+            <td style="text-align:right" class="valor-neg">R$ 4.621.125,95</td>
+            <td style="text-align:right">R$ 5.254.570,58</td>
+            <td style="text-align:right; color:#ea580c">+ R$ 633.444,63</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-section">
+      <h3>Estratégia de Contestação Extrajudicial</h3>
+      <div class="table-desc">Valores passíveis de exclusão ou redução da cobrança</div>
+      <table class="data-table">
+        <thead><tr><th>Item</th><th style="text-align:right">Valor</th></tr></thead>
+        <tbody>
+          <tr><td>✅ NFs já pagas (comprovadas)</td><td style="text-align:right" class="valor-pos">- R$ 197.229,13</td></tr>
+          <tr><td>⚠️ NFs duplicadas na cobrança</td><td style="text-align:right; color:#d97706">A verificar</td></tr>
+          <tr><td>📌 Notas em período de acordo</td><td style="text-align:right; color:#d97706">A calcular</td></tr>
+          <tr><td>🔍 Juros sobre itens contestados</td><td style="text-align:right; color:#d97706">Proporcional</td></tr>
+          <tr style="background:#f0fdf4; font-weight:700">
+            <td>Mínimo contestável imediatamente</td>
+            <td style="text-align:right" class="valor-pos">- R$ 197.229,13</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px; padding:12px; background:#f0fdf4; border-radius:8px; font-size:12px; color:#15803d;">
+        ✅ <strong>Ação imediata:</strong> As 48 NFs identificadas como já pagas pelo CASA
+        devem ser formalmente excluídas da cobrança extrajudicial.
+        Apresentar comprovantes de pagamento ao advogado/gestor.
+      </div>
+      <div style="margin-top:10px; padding:12px; background:#fffbeb; border-radius:8px; font-size:12px; color:#92400e;">
+        ⚠️ <strong>Negociação:</strong> Com R$ 703K de NFs pagas ainda cobradas + R$ 197K na extrajudicial,
+        há base para reduzir significativamente o valor objeto da negociação.
+        Valor total contestável: ~<strong>R$ 900.445</strong>.
+      </div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <h3>Amostra — Cobrança Extrajudicial (primeiras 50 NFs)</h3>
+    <div class="table-desc">Detalhamento das notas incluídas na cobrança extrajudicial da MV</div>
+    <div class="scroll-table">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Empresa</th><th>Nota</th><th>Cliente/Unidade</th><th>Produto</th>
+            <th style="text-align:right">Face (R$)</th>
+            <th style="text-align:right">C/ Juros (R$)</th>
+            <th>Dias Atraso</th>
+            <th>Situação</th>
+            <th>Conf. Rede Casa</th>
+          </tr>
+        </thead>
+        <tbody id="ext-tbody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ EXTRATOS BANCÁRIOS ============================================================ -->
+<div id="tab-extratos" class="content">
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="label">PDFs de Extratos</div>
+      <div class="value">349</div>
+      <div class="sub">2023 · 2024 · 2025 · 2026</div>
+    </div>
+    <div class="kpi-card verde">
+      <div class="label">Ocorrências MV Detectadas</div>
+      <div class="value">396</div>
+      <div class="sub">Menções aos fornecedores MV nos extratos</div>
+    </div>
+    <div class="kpi-card amarelo">
+      <div class="label">Unidade com mais Menções</div>
+      <div class="value">Medicina Diag.</div>
+      <div class="sub">98 ocorrências de pagamentos MV</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Período Coberto</div>
+      <div class="value">2023–2026</div>
+      <div class="sub">Jan/2023 a Fev/2026</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="table-section">
+      <h3>Menções MV por Unidade Hospitalar (Extratos)</h3>
+      <div class="table-desc">Quantidade de lançamentos relacionados a fornecedores MV detectados nos extratos por unidade</div>
+      <table class="data-table">
+        <thead><tr><th>Unidade</th><th style="text-align:right">Ocorrências</th></tr></thead>
+        <tbody>
+          <tr><td>Medicina Diagnóstica</td><td style="text-align:right; font-weight:600">98</td></tr>
+          <tr><td>Holding / Arrendatária</td><td style="text-align:right; font-weight:600">67</td></tr>
+          <tr><td>São Bernardo</td><td style="text-align:right; font-weight:600">54</td></tr>
+          <tr><td>Cancer</td><td style="text-align:right; font-weight:600">28</td></tr>
+          <tr><td>Evangélico</td><td style="text-align:right">20</td></tr>
+          <tr><td>Casa de Portugal</td><td style="text-align:right">16</td></tr>
+          <tr><td>Rio Laranjeiras</td><td style="text-align:right">15</td></tr>
+          <tr><td>Italiano</td><td style="text-align:right">12</td></tr>
+          <tr><td>Santa Cruz</td><td style="text-align:right">10</td></tr>
+          <tr><td>Prontocor</td><td style="text-align:right">8</td></tr>
+          <tr><td>Egas / Procordis</td><td style="text-align:right">7</td></tr>
+          <tr style="font-weight:600; background:#f8fafc"><td>TOTAL</td><td style="text-align:right">396</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-section">
+      <h3>Menções MV por Ano (Extratos)</h3>
+      <div class="table-desc">Distribuição temporal das ocorrências de pagamentos MV nos extratos bancários</div>
+      <table class="data-table">
+        <thead><tr><th>Período</th><th style="text-align:right">Ocorrências</th><th>Arquivos PDFs</th></tr></thead>
+        <tbody>
+          <tr><td>2023</td><td style="text-align:right; font-weight:600">152</td><td>~110 PDFs individuais</td></tr>
+          <tr><td>2024</td><td style="text-align:right; font-weight:600">178</td><td>~108 PDFs individuais</td></tr>
+          <tr><td>2025</td><td style="text-align:right; font-weight:600">52</td><td>~105 PDFs individuais</td></tr>
+          <tr><td>2026 (jan-fev)</td><td style="text-align:right; font-weight:600">14</td><td>15 PDFs individuais</td></tr>
+          <tr style="font-weight:600; background:#f8fafc"><td>TOTAL</td><td style="text-align:right">396</td><td>349 PDFs</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px; padding:12px; background:#eff6ff; border-radius:8px; font-size:12px; color:#1d4ed8;">
+        ℹ️ <strong>Metodologia:</strong> Os 349 PDFs de extratos bancários foram processados com extração de texto.
+        Foram buscados termos como "MV INF", "MV SISTEM", "FLOWTI", "GIF GESTAO", "SERVICOS TECNICOS" e variações.
+        Cada ocorrência representa uma linha de lançamento identificada no extrato.
+      </div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <h3>Exemplos de Pagamentos MV Identificados nos Extratos</h3>
+    <div class="table-desc">Amostra de lançamentos bancários relacionados aos fornecedores MV encontrados nos extratos PDF</div>
+    <div class="scroll-table">
+      <table class="data-table">
+        <thead>
+          <tr><th>Unidade</th><th>Período</th><th>Descrição no Extrato</th><th>Arquivo</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>São Bernardo</td><td>Extratos 2023</td><td>MV INFORMATICA - NF 47234</td><td>06.2023 - SÃO BERNARDO.pdf</td></tr>
+          <tr><td>São Bernardo</td><td>Extratos 2023</td><td>MV SISTEMAS - NF 2022003567</td><td>06.2023 - SÃO BERNARDO.pdf</td></tr>
+          <tr><td>São Bernardo</td><td>Extratos 2023</td><td>MV SISTEMAS - NF 3566</td><td>06.2023 - SÃO BERNARDO.pdf</td></tr>
+          <tr><td>São Bernardo</td><td>Extratos 2023</td><td>MV SISTEMAS - NF 3948</td><td>06.2023 - SÃO BERNARDO.pdf</td></tr>
+          <tr><td>Evangélico</td><td>Extratos 2023</td><td>NF 4389 MV SISTEMAS</td><td>12.2023 - EVANGELICO.pdf</td></tr>
+          <tr><td>Evangélico</td><td>Extratos 2023</td><td>NF 61915 MV INF NORDESTE</td><td>12.2023 - EVANGELICO.pdf</td></tr>
+          <tr><td>Medicina Diag.</td><td>Extatos 2026</td><td>MV SISTEMA 2343</td><td>02.2026 - MEDICINA DIAG.pdf</td></tr>
+          <tr><td>Medicina Diag.</td><td>Extatos 2026</td><td>MV SISTEMA NF. 2276 HRL</td><td>02.2026 - MEDICINA DIAG.pdf</td></tr>
+          <tr><td>Medicina Diag.</td><td>Extatos 2026</td><td>DES: FLOWTI TECNOLOGIA 27/02</td><td>02.2026 - MEDICINA DIAG.pdf</td></tr>
+          <tr><td>Medicina Diag.</td><td>Extatos 2026</td><td>NF 35 MV INSTALACOES PORTUGAL</td><td>02.2026 - MEDICINA DIAG.pdf</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px; padding:12px; background:#fef9c3; border-radius:8px; font-size:12px; color:#713f12;">
+      💡 <strong>Próximo passo recomendado:</strong> Para cada NF contestada, localizar o lançamento correspondente
+      no extrato bancário da unidade pagadora e extrair data, valor e documento para compor o dossiê de contestação.
+      Os PDFs individuais por unidade facilitam esse rastreamento.
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- DATA ----
+const extData = [
+  {"empresa":"MV INFORMATICA NORDESTE LTDA.","nota":"202300000060391","unidade":"HOSP SANTA CRUZ","produto":"MANUTENCAO","valor_face":7638.59,"valor_total":9468.59,"dias_atraso":905,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"MV INFORMATICA NORDESTE LTDA.","nota":"202300000060392","unidade":"HOSP SANTA CRUZ","produto":"MANUTENCAO","valor_face":999.5,"valor_total":1235.5,"dias_atraso":905,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"MV INFORMATICA NORDESTE LTDA.","nota":"202300000058106","unidade":"HOSP BOTAFOGO","produto":"MANUTENCAO","valor_face":37.96,"valor_total":46.96,"dias_atraso":924,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"MV SISTEMAS DE MEDICINA DIAGNOSTICA LTDA","nota":"202300000003224","unidade":"HOSP RIO LARANJEIRAS","produto":"MANUTENÇÃO","valor_face":7310.36,"valor_total":9588.76,"dias_atraso":875,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"MV SISTEMAS DE MEDICINA DIAGNOSTICA LTDA","nota":"202300000003525","unidade":"HOSP RIO LARANJEIRAS","produto":"CONSULTORIA E IMPLANTAÇÃO","valor_face":236.27,"valor_total":309.20,"dias_atraso":866,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"FLOWTI TECNOLOGIA LTDA","nota":"202400000001624","unidade":"HOSP ITALIANO","produto":"LICENÇA","valor_face":4020.0,"valor_total":4723.20,"dias_atraso":602,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"GIF GESTAO INTELIGENCIA DE FATURAMENTO LTDA","nota":"3290","unidade":"H. CANCER","produto":"SERVIÇO","valor_face":16423.75,"valor_total":20142.35,"dias_atraso":724,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"GIF GESTAO INTELIGENCIA DE FATURAMENTO LTDA","nota":"3392","unidade":"H. CANCER","produto":"SERVIÇO","valor_face":16423.75,"valor_total":19876.25,"dias_atraso":693,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"SERVICOS TECNICOS LTDA","nota":"403","unidade":"S. BERNARDO","produto":"SERV TECNICO","valor_face":1749.11,"valor_total":2012.11,"dias_atraso":690,"situacao":"7_+ de 360 dias","conferencia":"Em Aberto"},
+  {"empresa":"MV INFORMATICA NORDESTE LTDA.","nota":"202400000046896","unidade":"HOLDING","produto":"LICENÇA","valor_face":20468.71,"valor_total":23152.71,"dias_atraso":450,"situacao":"6_181-360 dias","conferencia":"Em Aberto"},
+];
+
+// Populate ext table
+const tbody = document.getElementById('ext-tbody');
+extData.forEach(r => {
+  const tr = document.createElement('tr');
+  const situClass = r.dias_atraso > 360 ? 'badge-red' : r.dias_atraso > 180 ? 'badge-orange' : 'badge-gray';
+  tr.innerHTML = `
+    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.empresa}">${r.empresa.replace('MV INFORMATICA NORDESTE LTDA.','MV INF NORDESTE').replace('MV SISTEMAS DE MEDICINA DIAGNOSTICA LTDA','MV SISTEMAS').replace('GIF GESTAO INTELIGENCIA DE FATURAMENTO LTDA','GIF GESTAO')}</td>
+    <td>${String(r.nota).substring(0,20)}</td>
+    <td>${r.unidade}</td>
+    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis" title="${r.produto}">${r.produto.substring(0,18)}</td>
+    <td style="text-align:right">R$ ${r.valor_face.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+    <td style="text-align:right;font-weight:600">R$ ${r.valor_total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+    <td style="text-align:center"><span class="${situClass}">${r.dias_atraso}</span></td>
+    <td><span class="${situClass}">${r.situacao.replace('7_+ de 360 dias','+360d')}</span></td>
+    <td><span class="badge-red">${r.conferencia}</span></td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// ---- CHARTS ----
+const fmtBR = v => 'R$ ' + (v/1000000).toFixed(2).replace('.',',') + ' M';
+const fmtK = v => 'R$ ' + (v/1000).toFixed(0) + ' K';
+const colors6 = ['#1B2B5B','#F47920','#2A3F7A','#D46610','#F79A50','#111D40'];
+
+// Chart 1: Pendências por fornecedor
+new Chart(document.getElementById('chartPendencias'), {
+  type: 'bar',
+  data: {
+    labels: ['MV INF Nordeste','Acordo MV 2023','MV Sistemas','Acordo MV 2024','Flowti','GIF','Serv. Técnicos'],
+    datasets: [{
+      label: 'Valor em Aberto',
+      data: [2209394,957914,469352,459965,452714,185756,33233],
+      backgroundColor: ['#1B2B5B','#F47920','#2A3F7A','#D46610','#F79A50','#111D40','#64748b'],
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'R$ ' + c.raw.toLocaleString('pt-BR') } } },
+    scales: { y: { ticks: { callback: v => fmtK(v) } }, x: { ticks: { font: { size: 10 } } } }
+  }
+});
+
+// Chart 2: Pagamentos por fornecedor
+new Chart(document.getElementById('chartPagamentos'), {
+  type: 'bar',
+  data: {
+    labels: ['MV INF Nordeste','MV Sistemas','Acordos 2024','Acordo 2023','Acordo Sistemas','Flowti','Outras'],
+    datasets: [{
+      label: 'Valor Pago',
+      data: [5906882,1836571,1323946,671680,614747,437263,1329102],
+      backgroundColor: '#1B2B5B',
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'R$ ' + c.raw.toLocaleString('pt-BR') } } },
+    scales: { y: { ticks: { callback: v => fmtBR(v) } }, x: { ticks: { font: { size: 10 } } } }
+  }
+});
+
+// Chart 3: Extrajudicial
+new Chart(document.getElementById('chartExtrajudicial'), {
+  type: 'bar',
+  data: {
+    labels: ['MV INF Nordeste','MV Sistemas','Flowti','GIF','Serv. Técnicos'],
+    datasets: [
+      { label: 'Valor Face', data: [2772442,751814,745702,325120,25943], backgroundColor: '#F47920', borderRadius: 4 },
+      { label: 'C/ Juros e Multa', data: [3132087,875973,833116,385944,27318], backgroundColor: '#1B2B5B', borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { tooltip: { callbacks: { label: c => c.dataset.label + ': R$ ' + c.raw.toLocaleString('pt-BR') } } },
+    scales: { y: { ticks: { callback: v => fmtBR(v) } }, x: { ticks: { font: { size: 10 } } } }
+  }
+});
+
+// Chart 4: Por unidade
+new Chart(document.getElementById('chartUnidades'), {
+  type: 'doughnut',
+  data: {
+    labels: ['S. Bernardo','H. Cancer','Laranjeiras','Evangélico','Portugal','Italiano','Botafogo','Santa Cruz','Outros'],
+    datasets: [{
+      data: [1769090,559617,447244,380425,318347,285105,225763,211100,339967],
+      backgroundColor: ['#1B2B5B','#F47920','#2A3F7A','#D46610','#F79A50','#111D40','#64748b','#94a3b8','#cbd5e1'],
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12 } },
+               tooltip: { callbacks: { label: c => c.label + ': R$ ' + c.raw.toLocaleString('pt-BR') } } }
+  }
+});
+
+// ---- TABS ----
+function showTab(name) {
+  document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+<div class="footer">
+  <div>
+    <strong>Preparado por:</strong> Joel Alves — Assessor da CEO &nbsp;|&nbsp;
+    <strong>Classificação:</strong> Confidencial &nbsp;|&nbsp;
+    Rede Casa Hospitais &copy; 2026
+  </div>
+  <div class="footer-logo">
+    <img src="https://static.wixstatic.com/media/70be2f_85f411ed98c74a479aab8c66ec913b71~mv2.png/v1/fit/w_2500,h_1330,al_c/70be2f_85f411ed98c74a479aab8c66ec913b71~mv2.png"
+         alt="Rede Casa">
+  </div>
+</div>
+</body>
+</html>
